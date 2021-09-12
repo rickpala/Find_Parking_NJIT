@@ -1,0 +1,62 @@
+{
+  "4": {
+    "EngineName": "NJIT",
+    "SiteName": "FENS2",
+    "Description": "FENS2 Facility",
+    "Available": "40",
+    "Occupied": "2",
+    "Total": "42",
+    "Name": "Fenster Level 2",
+    "Address": "144 New Street, Newark, NJ 07103",
+    "AddressURL": "http://maps.apple.com/?address=144+New+Street%2C+Newark%2C+NJ+07103",
+    "type": "facstaff"
+  },
+  "0": {
+    "EngineName": "NJIT",
+    "SiteName": "Science & Tech Garage",
+    "Description": "Facility",
+    "Available": "842",
+    "Occupied": "80",
+    "Total": "922",
+    "Name": "Science & Technology Park Garage",
+    "Address": "42 Wilsey Street, Newark, NJ 07103",
+    "AddressURL": "http://maps.apple.com/?address=42+Wilsey+Street%2C+Newark%2C+NJ+07103",
+    "type": "general"
+  },
+  "3": {
+    "EngineName": "NJIT",
+    "SiteName": "FENS1",
+    "Description": "FENS1 Facility",
+    "Available": "38",
+    "Occupied": "4",
+    "Total": "42",
+    "Name": "Fenster Level 1",
+    "Address": "142 New Street, Newark, NJ 07103",
+    "AddressURL": "http://maps.apple.com/?address=142+New+Street%2C+Newark%2C+NJ+07103",
+    "type": "reserved"
+  },
+  "2": {
+    "EngineName": "NJIT",
+    "SiteName": "Lot 10",
+    "Description": "Facility",
+    "Available": "32",
+    "Occupied": "1",
+    "Total": "33",
+    "Name": "Parking Lot #10",
+    "Address": "46 Wilsey Street, Newark, NJ 07103",
+    "AddressURL": "http://maps.apple.com/?address=46+Wilsey+Street%2C+Newark%2C+NJ+07103",
+    "type": "general"
+  },
+  "1": {
+    "EngineName": "NJIT",
+    "SiteName": "PARK",
+    "Description": "PARK Facility",
+    "Available": "1370",
+    "Occupied": "315",
+    "Total": "1685",
+    "Name": "Parking Deck",
+    "Address": "154 Summit Street, Newark, NJ 07103",
+    "AddressURL": "http://maps.apple.com/?address=154+Summit+Street%2C+Newark%2C+NJ+07103",
+    "type": "general"
+  }
+}
