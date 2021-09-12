@@ -35,12 +35,12 @@ def get_deck_info(log=False):
 
 def input_record(df, timestamp):
     collection = db[df['SiteName']]
+    logging.info(f"Inserting into {collection}:\n {json.dumps(df, indent=2)}")
     df["datetime"] = timestamp
     collection.insert_one(df)
-    logging.info(f"Inserted into {collection}:\n{json.dumps(df, indent=2)}")
 
 def main():
-    duration = timedelta(minutes=1)
+    duration = timedelta(days=7)
     start_time = datetime.now()
     end_time = datetime.now() + duration
     now = datetime.now()
