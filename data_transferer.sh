@@ -10,7 +10,7 @@ usage () {
         :   ipconfig getifaddr en1  # en0 for WiFI
         : 
         : 2. Send the BSON dump over to the Mac
-        :   scp -r /home/pi/dev/dump ricky@<MACBOOK_IP_ADDRESS>:/Users/ricky/dump
+        :   scp -r /home/pi/dev/dump ricky@<MACBOOK_IP_ADDRESS>:/Users/ricky/dump/
         : 
         : 3. Restore the files on the Mac
         :   mongorestore -d parking_backup dump/NJIT_Parking --drop
@@ -20,5 +20,5 @@ EOF
         shopt -u extglob
 }
 
-mongodump --db=NJIT_Parking --out=/home/pi/dev/dump
+mongodump --db=NJIT_Parking --out=/home/pi/dev/njit_parking/dump
 usage
