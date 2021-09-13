@@ -2,7 +2,7 @@
 
 # Init mongo
 sudo systemctl enable mongodb
-sudo systemcdtl start mongodb
+sudo systemctl start mongodb
 
 # Run python app
 source ./venv/bin/activate
