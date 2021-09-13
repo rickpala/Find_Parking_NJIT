@@ -26,7 +26,7 @@ def refresh_headers():
         full += f"{c}={val};" 
 
     headers["Cookie"] = full
-    logging.info(f"Refreshed headers to: {json.dumps(headers, indent=2)}")
+    logging.info(f"Refreshed headers to: {json.dumps(dict(headers), indent=2)}")
 
 def get_deck_info(log=False):
     try:
