@@ -27,7 +27,7 @@ headers["Cookie"] = (
 # >>> argparse
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--verbose",
-    help="Increate output verbosity",
+    help="Increase output verbosity",
     action='store_true')
 args = parser.parse_args()
 # <<< argparse
@@ -51,9 +51,4 @@ if args.verbose:
 # >>> MongoDB Database
 client = MongoClient("mongodb://localhost")
 db = client.NJIT_Parking
-# collection = db.ScienceTest
-# collection.insert_one({"x": 1, "y": 2, "z": 3})
-# from pprint import pprint
-# pprint(collection.find_one({"x": 1}))
-
 # <<< MongoDB Database
