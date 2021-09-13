@@ -7,6 +7,7 @@ from requests.structures import CaseInsensitiveDict
 from setup import url
 from typing import Dict, Optional
 
+# Defaults
 def_headers = CaseInsensitiveDict()
 def_headers["Connection"] = "keep-alive"
 def_headers["Accept"] = "application/json, text/plain, */*"
@@ -56,7 +57,7 @@ def main():
     r = Refresher()
     while True:
         r.refresh_id()
-        time.sleep(1)
+        time.wait(10 * 60) # 10 minutes
         
 if __name__ == "__main__":
     t = threading.Thread(target=main)
