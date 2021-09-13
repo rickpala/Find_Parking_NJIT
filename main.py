@@ -4,18 +4,29 @@ import requests
 import time
 import logging
 from datetime import datetime, timedelta
+from http.cookies import SimpleCookie
 from pprint import pformat, pprint
 from setup import args, db, headers, logger, url
 
 def refresh_headers():
-    all_cookies = headers["Cookie"]
-    fresh_id = ""
+    # Get freshest ID
     with open("NJIT_PARKING_PHPSESSID", "r") as f:
         fresh_id = f.read()
 
-    for c in all_cookies.split(";"):
-        if re.search(c, "PHPSESSID=(.*)"):
-            re.sub("PHPSESSID=(.*)", f"PHPSESSID={fresh_id}", all_cookies)
+    # Raw string to dict
+    cookies = headers["Cookie"].split(";")
+    cookies = {c.split("=")[0]: c.split("=")[1] for c in cookies}
+
+    # Edit PHPSESSID in-place
+    cookies["PHPSESSID"] = fresh_id
+
+    # Rebuild into one long string
+    full = ""
+    for c, val in cookies.items():
+        full += f"{c}={val};" 
+
+    headers["Cookie"] = full
+    logging.info(f"Refreshed headers to: {json.dumps(headers, indent=2)}")
 
 def get_deck_info(log=False):
     try:
