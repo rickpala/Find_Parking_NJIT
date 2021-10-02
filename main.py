@@ -50,21 +50,28 @@ def input_record(df, timestamp):
     df["datetime"] = timestamp
     collection.insert_one(df)
 
+def input_record_gsheet(df, timestamp):
+    pass
+
+
 def main():
-    duration = timedelta(days=7)
+    duration = timedelta(days=30)
     start_time = datetime.now()
     end_time = datetime.now() + duration
     now = datetime.now()
     error_count = 0
     while now < end_time or error_count < 5:
-        data = get_deck_info()
-        if "Error" in data:
-            error_count += 1
+        try: 
+            data = get_deck_info()
+            if "Error" in data:
+                error_count += 1
+                continue
+            for idx, val in data.items():
+                input_record(val, now)
+            now = datetime.now()
+            time.sleep(60)
+        except Exception as e:
             continue
-        for idx, val in data.items():
-            input_record(val, now)
-        now = datetime.now()
-        time.sleep(60)
 
 if __name__=="__main__":
     main()

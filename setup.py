@@ -2,6 +2,8 @@ import argparse
 import logging
 from pymongo import MongoClient
 from requests.structures import CaseInsensitiveDict
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 url = "http://mobile.njit.edu/parking/data.php"
 
@@ -52,3 +54,8 @@ if args.verbose:
 client = MongoClient("mongodb://localhost")
 db = client.NJIT_Parking
 # <<< MongoDB Database
+
+# >>> Google Sheets API >>>
+gc = gspread.service_account()
+sheet = gc.open("njit_parking_gsheet").sheet1
+# <<< Google Sheets API <<<
