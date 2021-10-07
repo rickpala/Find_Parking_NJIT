@@ -8,3 +8,5 @@ sudo systemctl start mongodb
 source ./venv/bin/activate
 python3 refresher.py &
 python3 main.py -v &
+wait
+python3 mailer.py
