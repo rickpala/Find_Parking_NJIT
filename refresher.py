@@ -57,7 +57,7 @@ def main():
     r = Refresher()
     while True:
         r.refresh_id()
-        time.wait(10 * 60) # 10 minutes
+        time.sleep(10 * 60) # 10 minutes
         
 if __name__ == "__main__":
     t = threading.Thread(target=main)
