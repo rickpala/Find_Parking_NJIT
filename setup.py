@@ -57,5 +57,5 @@ db = client.NJIT_Parking
 
 # >>> Google Sheets API >>>
 gc = gspread.service_account()
-sheet = gc.open("njit_parking_gsheet").sheet1
+gfile = gc.open("njit_parking_gsheet")
 # <<< Google Sheets API <<<

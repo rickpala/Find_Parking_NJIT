@@ -6,7 +6,11 @@ import logging
 from datetime import datetime, timedelta
 from http.cookies import SimpleCookie
 from pprint import pformat, pprint
-from setup import args, db, headers, logger, url
+from setup import args, db, headers, logger, url, gfile
+
+# Keep only 'SiteName', 'Available', 'Occupied'
+extraneous_columns = ["EngineName", "Description", "Total",
+                      "Name", "Address", "AddressURL", "type"]
 
 def refresh_headers():
     # Get freshest ID
@@ -15,6 +19,8 @@ def refresh_headers():
 
     # Raw string to dict
     cookies = headers["Cookie"].split(";")
+    if "" in cookies:
+        cookies.remove("")
     cookies = {c.split("=")[0]: c.split("=")[1] for c in cookies}
 
     # Edit PHPSESSID in-place
@@ -50,9 +56,32 @@ def input_record(df, timestamp):
     df["datetime"] = timestamp
     collection.insert_one(df)
 
-def input_record_gsheet(df, timestamp):
-    pass
+def get_curr_sheet(timestamp):
+    sheets = gfile.worksheets()
+    sheet_titles = [sheet.title for sheet in sheets]
+    today = timestamp.strftime("%Y_%m_%d")
+    if today not in sheet_titles:
+        gfile.add_worksheet(title=today, rows=1450, cols=5)
+        gfile.append_row("timestamp", "Available", "Occupied", "SiteName")
+    return gfile.worksheet(today)
 
+def prepare_payload(json_data, timestamp):
+    for col in extraneous_columns:
+        json_data.pop(col, None)  # remove extraneous columns
+    
+    fmt_time = timestamp.strftime("%H:%M")
+    available = json_data["Available"]
+    occupied = json_data["Occupied"]
+    site_name = json_data["SiteName"]
+    payload = [fmt_time, available, occupied, site_name]
+    return payload
+
+def input_gsheet(json_data, timestamp):
+    # Collect gsheet
+    curr_sheet = get_curr_sheet(timestamp)
+    payload = prepare_payload(json_data, timestamp)
+    logging.info(f"Inserting into {timestamp.strftime('%Y_%m_%d')}:\n {payload}")
+    curr_sheet.append_row(payload)
 
 def main():
     duration = timedelta(days=30)
@@ -66,8 +95,8 @@ def main():
             if "Error" in data:
                 error_count += 1
                 continue
-            for idx, val in data.items():
-                input_record(val, now)
+            for _, json_data in data.items():
+                input_gsheet(json_data, now)
             now = datetime.now()
             time.sleep(60)
         except Exception as e:
