@@ -3,3 +3,4 @@ venv
 NJIT_PARKING_PHPSESSID
 mailer.py
 client_secret.json
+playground.ipynb
