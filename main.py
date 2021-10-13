@@ -1,106 +1,114 @@
 import json
-import re
 import requests
 import time
 import logging
 from datetime import datetime, timedelta
-from http.cookies import SimpleCookie
 from pprint import pformat, pprint
-from setup import args, db, headers, logger, url, gfile
+from setup import args, db, headers, logger, url, gfile, script_duration
+from typing import List, Dict
 
-# Keep only 'SiteName', 'Available', 'Occupied'
-extraneous_columns = ["EngineName", "Description", "Total",
-                      "Name", "Address", "AddressURL", "type"]
+class Headers:
+    def __init__(self, headers):
+        self.headers = headers
 
-def refresh_headers():
-    # Get freshest ID
-    with open("NJIT_PARKING_PHPSESSID", "r") as f:
-        fresh_id = f.read()
+    def refresh_headers(self):
+        """Updates current PHPSESSID with the one in file NJIT_PARKING_PHPSESSID."""
+        with open("NJIT_PARKING_PHPSESSID", "r") as f:
+            fresh_id = f.read()
 
-    # Raw string to dict
-    cookies = headers["Cookie"].split(";")
-    if "" in cookies:
-        cookies.remove("")
-    cookies = {c.split("=")[0]: c.split("=")[1] for c in cookies}
+        # Raw string of cookies to usable dict
+        cookies = self.headers["Cookie"].split(";")
+        if "" in cookies:
+            cookies.remove("")
+        cookies = {c.split("=")[0]: c.split("=")[1] for c in cookies}
+        cookies["PHPSESSID"] = fresh_id
 
-    # Edit PHPSESSID in-place
-    cookies["PHPSESSID"] = fresh_id
+        # Rebuild into one long string
+        full = ""
+        for c, val in cookies.items():
+            full += f"{c}={val};" 
 
-    # Rebuild into one long string
-    full = ""
-    for c, val in cookies.items():
-        full += f"{c}={val};" 
+        self.headers["Cookie"] = full
+        logging.info(f"Refreshed headers to: {json.dumps(dict(self.headers), indent=2)}")
 
-    headers["Cookie"] = full
-    logging.info(f"Refreshed headers to: {json.dumps(dict(headers), indent=2)}")
+class DataHandler:
+    """Responsible for retrieving, cleaning, and inserting data for NJIT Parking."""
+    SITENAME_TRANSLATOR = {"PARK": "PARK", "Science & Tech Garage": "TECH",
+                           "FENS1": "FENS1", "FENS2": "FENS2",
+                           "Lot 10": "LOT10"}
+    DECKS = {"TECH": "0", "PARK": "1", "LOT10": "2", "FENS1": "3", "FESN2": "4"}
+    def __init__(self):
+        self.headers = Headers(headers)
+        self.gfile = gfile
+        self._ensure_sheet_is_uptodate() 
 
-def get_deck_info(log=False):
-    try:
-        logging.info(f"Reaching {url}...")
-        resp = requests.post(url, headers=headers)
-        if resp.status_code != 200:
-            raise ConnectionError
-        data = resp.json().get("decks")
-        logging.info(f"Status: {resp.status_code}")
-        logging.info(f"Received:\n{json.dumps(data, indent=2)}")
-    except ConnectionError as e:
-        refresh_headers()
-        err = f"Unable to complete request to {url}. {e}"
-        logging.error(err)
-        return {"Error": err}
-    return data
+    def get_deck_info(self):
+        """Gets the parking data and returns a list of the availability of each deck."""
+        for _ in range(3):  # Retry up to 3 times
+            try:
+                # Reach http://mobile.njit.edu/parking/data.php
+                logging.info(f"Reaching {url}...")
+                resp = requests.post(url, headers=headers)
+                logging.info(f"Status: {resp.status_code}")
+                if resp.status_code != 200:
+                    raise ConnectionError
 
-def input_record(df, timestamp):
-    collection = db[df['SiteName']]
-    logging.info(f"Inserting into {collection}:\n {json.dumps(df, indent=2)}")
-    df["datetime"] = timestamp
-    collection.insert_one(df)
+                # Clean data
+                resp_json = resp.json().get("decks")
+                data = self._parse_response(resp_json)
 
-def get_curr_sheet(timestamp):
-    sheets = gfile.worksheets()
-    sheet_titles = [sheet.title for sheet in sheets]
-    today = timestamp.strftime("%Y_%m_%d")
-    if today not in sheet_titles:
-        gfile.add_worksheet(title=today, rows=1450, cols=5)
-        gfile.append_row("timestamp", "Available", "Occupied", "SiteName")
-    return gfile.worksheet(today)
+            except ConnectionError as e:
+                logging.error(f"[DataHandler.get_deck_info] Unable to connect. Trying again...")
+                logging.error(e)
+                self.headers.refresh_headers()
+            else:
+                return data  # executed succesfully; no need to retry
 
-def prepare_payload(json_data, timestamp):
-    for col in extraneous_columns:
-        json_data.pop(col, None)  # remove extraneous columns
-    
-    fmt_time = timestamp.strftime("%H:%M")
-    available = json_data["Available"]
-    occupied = json_data["Occupied"]
-    site_name = json_data["SiteName"]
-    payload = [fmt_time, available, occupied, site_name]
-    return payload
+    def _parse_response(self, resp):
+        """
+        Returns the flattened response containing the *availability* of each deck.
+        
+        The structure of the response will be in the order:
+        [timestamp (HH:MM), TECH, PARK, LOT10, FENS1, FENS2]
+        """
+        logging.info(f"Raw JSON:\n{json.dumps(resp, indent=2)}")
 
-def input_gsheet(json_data, timestamp):
-    # Collect gsheet
-    curr_sheet = get_curr_sheet(timestamp)
-    payload = prepare_payload(json_data, timestamp)
-    logging.info(f"Inserting into {timestamp.strftime('%Y_%m_%d')}:\n {payload}")
-    curr_sheet.append_row(payload)
+        now = datetime.now()
+        now = now.strftime("%H:%M")
+        rv = [now]
+        for _, deck in self.DECKS.items():
+            data = resp[deck]
+            availablility = int(data["Available"])
+            rv.append(availablility)
 
-def main():
-    duration = timedelta(days=30)
-    start_time = datetime.now()
-    end_time = datetime.now() + duration
-    now = datetime.now()
-    error_count = 0
-    while now < end_time or error_count < 5:
-        try: 
-            data = get_deck_info()
-            if "Error" in data:
-                error_count += 1
-                continue
-            for _, json_data in data.items():
-                input_gsheet(json_data, now)
-            now = datetime.now()
-            time.sleep(60)
-        except Exception as e:
-            continue
+        logging.info(f"Flattened to: {rv}")
+        return rv
+
+    def _ensure_sheet_is_uptodate(self):
+        """Updates self.curr_sheet if no sheet exists yet for today. Otherwise return the current sheet"""
+        sheets = self.gfile.worksheets()
+        sheet_titles = [sheet.title for sheet in sheets]
+        today = datetime.now().strftime("%Y_%m_%d")
+        if today not in sheet_titles:
+            logging.info(f"[DataHandler._get_and_set_curr_sheet] Creating new sheet: {today}")
+            new_sheet = self.gfile.add_worksheet(title=today, rows=1450, cols=5)
+            new_sheet.append_row("timestamp", "Available", "Occupied", "SiteName")
+            self.curr_sheet = new_sheet  # Update for today's sheet
+        else:
+            self.curr_sheet = self.gfile.worksheet(today)
+
+    def insert_to_gsheet(self, payload):
+        logging.info(f"Appending row: {payload}")
+        self._ensure_sheet_is_uptodate() 
+        self.curr_sheet.append_row(payload)
 
 if __name__=="__main__":
-    main()
+    end_time = datetime.now() + script_duration
+    dh = DataHandler()
+    while datetime.now() < end_time:
+        try:
+            data = dh.get_deck_info()
+            dh.insert_to_gsheet(data) 
+            time.sleep(60)
+        except Exception as e:
+            logger.error(f"[main]: {e}")
