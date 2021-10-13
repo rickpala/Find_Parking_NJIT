@@ -36,7 +36,7 @@ class DataHandler:
     SITENAME_TRANSLATOR = {"PARK": "PARK", "Science & Tech Garage": "TECH",
                            "FENS1": "FENS1", "FENS2": "FENS2",
                            "Lot 10": "LOT10"}
-    DECKS = {"TECH": "0", "PARK": "1", "LOT10": "2", "FENS1": "3", "FESN2": "4"}
+    DECKS = {"TECH": "0", "PARK": "1", "LOT10": "2", "FENS1": "3", "FENS2": "4"}
     def __init__(self):
         self.headers = Headers(headers)
         self.gfile = gfile
@@ -92,7 +92,7 @@ class DataHandler:
         if today not in sheet_titles:
             logging.info(f"[DataHandler._get_and_set_curr_sheet] Creating new sheet: {today}")
             new_sheet = self.gfile.add_worksheet(title=today, rows=1450, cols=5)
-            new_sheet.append_row("timestamp", "Available", "Occupied", "SiteName")
+            new_sheet.append_row(["timestamp", "Available", "Occupied", "SiteName"])
             self.curr_sheet = new_sheet  # Update for today's sheet
         else:
             self.curr_sheet = self.gfile.worksheet(today)
