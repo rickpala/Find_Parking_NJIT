@@ -103,12 +103,13 @@ class DataHandler:
         self.curr_sheet.append_row(payload)
 
 if __name__=="__main__":
-    end_time = datetime.now() + script_duration
+    start_time = time.time()  # for precise 60 second looping
+    end_time = datetime.now() + script_duration  # for script lifetime
     dh = DataHandler()
     while datetime.now() < end_time:
         try:
             data = dh.get_deck_info()
             dh.insert_to_gsheet(data) 
-            time.sleep(60)
+            time.sleep(60.0 - ((time.time() - start_time) % 60.0)) # wait precisely 60 seconds
         except Exception as e:
             logger.error(f"[main]: {e}")
