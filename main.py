@@ -92,7 +92,7 @@ class DataHandler:
         if today not in sheet_titles:
             logging.info(f"[DataHandler._get_and_set_curr_sheet] Creating new sheet: {today}")
             new_sheet = self.gfile.add_worksheet(title=today, rows=1450, cols=5)
-            new_sheet.append_row(["timestamp", "Available", "Occupied", "SiteName"])
+            new_sheet.append_row(["timestamp", "TECH", "PARK", "LOT10", "FENS1", "FENS2"]) 
             self.curr_sheet = new_sheet  # Update for today's sheet
         else:
             self.curr_sheet = self.gfile.worksheet(today)
