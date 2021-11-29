@@ -24,38 +24,25 @@ def get_day_df(day):
   df.drop(['Timestamp'], axis=1, inplace=True)
   return df
 
-def predict(duration):
+def predict(day, time):
   """Predicts the parking availabtility in `duration` minutes from now"""
-  # tz = timezone('US/Eastern')
-  # et_now = datetime.datetime.now(tz)
-  et_now = datetime.datetime(2021, 11, 28, 12, 00)
-
-  then = et_now + datetime.timedelta(minutes=duration)
-  day_str = then.strftime("%a").upper()
-  day_str = "MON"
-  then_str = then.strftime("%H:%M")
-  # then_str = "13:00"
-
-  df = get_day_df(day_str)
-  tech = df.loc[then_str]["AVG(TECH)"]
-  park = df.loc[then_str]["AVG(PARK)"]
-  spots = int(tech) + int(park)
-
+  df = get_day_df(day)
+  tech = df.loc[time]["AVG(TECH)"]
+  park = df.loc[time]["AVG(PARK)"]
   return {
-      "TECH": df.loc[then_str]["AVG(TECH)"],
-      "dTECH": df.loc[then_str]["dAVG(TECH)"],
-      "PARK": df.loc[then_str]["AVG(PARK)"],
-      "dPARK": df.loc[then_str]["dAVG(PARK)"],
+      "TECH": df.loc[time]["AVG(TECH)"],
+      "dTECH": df.loc[time]["dAVG(TECH)"],
+      "PARK": df.loc[time]["AVG(PARK)"],
+      "dPARK": df.loc[time]["dAVG(PARK)"],
   }
-  return spots
 
-def get_status(garage, duration):
+def get_status(garage, day, time):
   """Retrieves parking garage status."""    
-  data = predict(duration)
+  data = predict(day, time)
   pred = int(data[garage])
   delta = int(data["d"+garage])
 
-  rv = f"Status of: {garage}\n\n"
+  rv = f"Status of: {garage} @ {day} {time}\n\n"
   if pred < 100:
     rv += "RED - Above 90% capacity.\n"
   elif 100 <= pred < 200:
@@ -68,12 +55,14 @@ def get_status(garage, duration):
   else:
     rv += "Better hurry, spots are filling up.\n"
 
-  rv += f"{pred} spots currently available.\n"
+  rv += f"{pred} spots should be available.\n"
   
   return rv
 
 
 if __name__ == "__main__":
-  duration = int(sys.argv[1])
-  deck = sys.argv[2]
-  print(get_status(deck, duration))
+  deck = sys.argv[1]  # TECH or
+  day = sys.argv[2]   # all caps shortened
+  time = sys.argv[3]  # as hh:mm
+
+  print(get_status(deck, day, time))
